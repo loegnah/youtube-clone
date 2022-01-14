@@ -44,3 +44,20 @@ export const postEdit = (req, res) => {
   videos[id].title = title;
   return res.redirect(`/videos/${id}`);
 };
+
+export const getUpload = (req, res) => {
+  return res.render("upload", { pageTitle: `Upload Video` });
+};
+
+export const postUpload = (req, res) => {
+  const { title } = req.body;
+  const newVideo = {
+    title,
+    id: videos.length,
+    rating: 0,
+    views: 0,
+    comments: "",
+  };
+  videos.push(newVideo);
+  return res.redirect("/");
+};
