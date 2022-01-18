@@ -1,6 +1,9 @@
 extends base
 
 block content
+    p=errorMessage
     form(method='post')
-        input(name='title', placeholder='Title', required, type='text')
+        input(name='title', placeholder='Title', type='text', required)
+        input(name='description', placeholder='Description', type='text', required)
+        input(name='hashtags', placeholder='Hashtags', type='text', required)
         input(type='submit', value='Upload Video')
