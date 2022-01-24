@@ -1,0 +1,19 @@
+extends base
+
+block content
+    if errorMessage
+        p=errorMessage
+
+    form(method="POST")
+        input(name="name", type="text", placeholder="Name", required)
+        input(name="email", type="text", placeholder="Email", required)
+        input(name="username", type="text", placeholder="User name", required)
+        input(name="password", type="password", placeholder="Password", required)
+        input(name="password2", type="password", placeholder="Confirm Password", required)
+        input(name="location", type="text", placeholder="Location", required)
+        input(type="submit", value="Join")
+
+    hr
+    div
+        span Already have an account?
+        a(href="/login") Lon in &rarr;
