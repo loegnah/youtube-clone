@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import fetch from "node-fetch";
 import User from "../models/User";
 
 export const getJoin = (req, res) => {
@@ -69,10 +70,86 @@ export const postLogin = async (req, res) => {
   return res.redirect("/");
 };
 
+export const startGithubLogin = (req, res) => {
+  const baseUrl = "https://github.com/login/oauth/authorize";
+  const configs = {
+    client_id: process.env.GTIHUB_CLIENT_ID,
+    allow_signup: "false",
+    scope: "read:user user:email",
+  };
+  const params = new URLSearchParams(configs).toString();
+  const url = `${baseUrl}?${params}`;
+  return res.redirect(url);
+};
+
+export const finishGithubLogin = async (req, res) => {
+  const baseUrl = "https://github.com/login/oauth/access_token";
+  const configs = {
+    client_id: process.env.GTIHUB_CLIENT_ID,
+    client_secret: process.env.GITHUB_SECRET,
+    code: req.query.code,
+  };
+  const params = new URLSearchParams(configs).toString();
+  const url = `${baseUrl}?${params}`;
+  const tokenRequest = await (
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+  ).json();
+
+  if ("access_token" in tokenRequest) {
+    const { access_token } = tokenRequest;
+    const githubApiUrl = "https://api.github.com";
+    const userData = await (
+      await fetch(`${githubApiUrl}/user`, {
+        method: "GET",
+        headers: {
+          Authorization: `token ${access_token}`,
+        },
+      })
+    ).json();
+    const emailDataList = await (
+      await fetch(`${githubApiUrl}/user/emails`, {
+        method: "GET",
+        headers: {
+          Authorization: `token ${access_token}`,
+        },
+      })
+    ).json();
+    const verifiedEmailObj = emailDataList.find(
+      (emailData) => emailData.primary === true && emailData.verified === true
+    );
+    if (!verifiedEmailObj) {
+      return res.redirect("/login");
+    }
+    let user = await User.findOne({ email: verifiedEmailObj.email });
+    if (!user) {
+      user = await User.create({
+        name: userData.name,
+        username: userData.login,
+        email: verifiedEmailObj.email,
+        password: "",
+        location: userData.location,
+        socialOnly: true,
+        avatarUrl: userData.avatar_url,
+      });
+    }
+    req.session.user = user;
+    req.session.loggedIn = true;
+    return res.redirect("/");
+  }
+
+  return res.redirect("/login");
+};
+
+export const logout = (req, res) => {
+  req.session.destroy();
+  return res.redirect("/");
+};
+
 export const edit = (req, res) => res.send("Edit User");
-
-export const remove = (req, res) => res.send("Remove User");
-
-export const logout = (req, res) => res.send("Log out");
 
 export const see = (req, res) => res.send("See User");
